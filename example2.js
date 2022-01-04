@@ -187,7 +187,7 @@ var Module = typeof Module !== 'undefined' ? Module : {};
     }
   
    }
-   loadPackage({"files": [{"filename": "/tests/hello_world_file.txt", "start": 0, "end": 72, "audio": 0}], "remote_package_size": 72, "package_uuid": "be9ac3f9-ba24-484d-aeda-95ecbe3cb330"});
+   loadPackage({"files": [{"filename": "/tests/hello_world_file.txt", "start": 0, "end": 72, "audio": 0}], "remote_package_size": 72, "package_uuid": "28a89d45-4d20-4837-91af-cdfd5975fa14"});
   
   })();
   
