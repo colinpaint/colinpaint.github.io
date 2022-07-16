@@ -100,14 +100,14 @@ var loadPointCloud = function(dataset, onload) {
       var buffer = req.response;
       if (buffer) {
         onload (dataset, buffer);
-        } 
+        }
       else {
-        alert("Unable to load buffer properly from volume?");
+        alert ("Unable to load buffer properly from volume?");
         console.log ("no buffer?");
         }
      };
     req.send();
-    } 
+    }
   else {
     var reader = new FileReader();
     reader.onerror = errFcn;
@@ -117,7 +117,7 @@ var loadPointCloud = function(dataset, onload) {
       var buffer = reader.result;
       if (buffer) {
         onload (dataset, buffer);
-        } 
+        }
       else {
         alert ("Unable to load buffer properly from volume?");
         console.log ("no buffer?");
@@ -173,6 +173,7 @@ var selectPointCloud = function() {
     gl.vertexAttribDivisor (3, 1);
 
     newPointCloudUpload = true;
+
     document.getElementById ("numSplats").innerHTML = numSurfels;
     surfelBuffer = dataBuffer;
     surfelDataset = dataset;
