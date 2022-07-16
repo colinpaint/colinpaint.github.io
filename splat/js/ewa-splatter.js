@@ -69,221 +69,227 @@ var pointClouds = {
 }}}
 {{{
 var loadPointCloud = function(dataset, onload) {
-        var loadingProgressText = document.getElementById("loadingText");
-        var loadingProgressBar = document.getElementById("loadingProgressBar");
-        loadingProgressText.innerHTML = "Loading Dataset";
-        loadingProgressBar.setAttribute("style", "width: 0%");
 
-        var errFcn = function() {
-                loadingProgressText.innerHTML = "Error Loading Dataset";
-                loadingProgressBar.setAttribute("style", "width: 0%");
-        };
+  var loadingProgressText = document.getElementById ("loadingText");
+  var loadingProgressBar = document.getElementById ("loadingProgressBar");
+  loadingProgressText.innerHTML = "Loading Dataset";
+  loadingProgressBar.setAttribute ("style", "width: 0%");
 
-        if (!dataset.file) {
-                var url = "https://www.dl.dropboxusercontent.com/s/" + dataset.url + "?dl=1";
-                if (dataset.testing) {
-                        url = dataset.url;
-                }
-                var req = new XMLHttpRequest();
+  var errFcn = function() {
+    loadingProgressText.innerHTML = "Error Loading Dataset";
+    loadingProgressBar.setAttribute ("style", "width: 0%");
+    };
 
-                req.open("GET", url, true);
-                req.responseType = "arraybuffer";
-                req.onprogress = function(evt) {
-                        var percent = evt.loaded / dataset.size * 100;
-                        loadingProgressBar.setAttribute("style", "width: " + percent.toFixed(2) + "%");
-                };
-                req.onerror = errFcn;
-                req.onload = function(evt) {
-                        loadingProgressText.innerHTML = "Loaded Dataset";
-                        loadingProgressBar.setAttribute("style", "width: 100%");
-                        var buffer = req.response;
-                        if (buffer) {
-                                onload(dataset, buffer);
-                        } else {
-                                alert("Unable to load buffer properly from volume?");
-                                console.log("no buffer?");
-                        }
-                };
-                req.send();
-        } else {
-                var reader = new FileReader();
-                reader.onerror = errFcn;
-                reader.onload = function(evt) {
-                        loadingProgressText.innerHTML = "Loaded Dataset";
-                        loadingProgressBar.setAttribute("style", "width: 100%");
-                        var buffer = reader.result;
-                        if (buffer) {
-                                onload(dataset, buffer);
-                        } else {
-                                alert("Unable to load buffer properly from volume?");
-                                console.log("no buffer?");
-                        }
-                };
-                reader.readAsArrayBuffer(dataset.file);
+  if (!dataset.file) {
+    var url = "https://www.dl.dropboxusercontent.com/s/" + dataset.url + "?dl=1";
+    if (dataset.testing) {
+      url = dataset.url;
+      }
+    var req = new XMLHttpRequest();
+
+    req.open("GET", url, true);
+    req.responseType = "arraybuffer";
+    req.onprogress = function(evt) {
+      var percent = evt.loaded / dataset.size * 100;
+      loadingProgressBar.setAttribute ("style", "width: " + percent.toFixed(2) + "%");
+      };
+    req.onerror = errFcn;
+    req.onload = function(evt) {
+      loadingProgressText.innerHTML = "Loaded Dataset";
+      loadingProgressBar.setAttribute ("style", "width: 100%");
+      var buffer = req.response;
+      if (buffer) {
+        onload (dataset, buffer);
+        } 
+      else {
+        alert("Unable to load buffer properly from volume?");
+        console.log ("no buffer?");
         }
-}
+     };
+    req.send();
+    } 
+  else {
+    var reader = new FileReader();
+    reader.onerror = errFcn;
+    reader.onload = function(evt) {
+      loadingProgressText.innerHTML = "Loaded Dataset";
+      loadingProgressBar.setAttribute ("style", "width: 100%");
+      var buffer = reader.result;
+      if (buffer) {
+        onload (dataset, buffer);
+        } 
+      else {
+        alert ("Unable to load buffer properly from volume?");
+        console.log ("no buffer?");
+        }
+      };
+    reader.readAsArrayBuffer (dataset.file);
+    }
+  }
 }}}
 {{{
 var selectPointCloud = function() {
-        var selection = document.getElementById("datasets").value;
-        history.replaceState(history.state, "#" + selection, "#" + selection);
-        var loadingInfo = document.getElementById("loadingInfo");
-        loadingInfo.style.display = "block";
 
-        loadPointCloud(pointClouds[selection], function(dataset, dataBuffer) {
-                loadingInfo.style.display = "none";
-                var header = new Uint32Array(dataBuffer, 0, 4);
-                var bounds = new Float32Array(dataBuffer, 16, 6);
+  var selection = document.getElementById ("datasets").value;
+  history.replaceState (history.state, "#" + selection, "#" + selection);
+  var loadingInfo = document.getElementById ("loadingInfo");
+  loadingInfo.style.display = "block";
 
-                numSurfels = header[0];
-                surfelPositions = new Float32Array(dataBuffer, header[1], numSurfels * (sizeofSurfel / 4));
-                surfelColors = new Uint8Array(dataBuffer, header[1] + numSurfels * sizeofSurfel);
+  loadPointCloud (pointClouds[selection], function (dataset, dataBuffer) {
+    loadingInfo.style.display = "none";
+    var header = new Uint32Array (dataBuffer, 0, 4);
+    var bounds = new Float32Array (dataBuffer, 16, 6);
 
-                var numKdNodes = header[2];
-                var kdNodes = new Uint32Array(dataBuffer, 40, numKdNodes * 2);
-                var kdPrimIndices = new Uint32Array(dataBuffer, 40 + numKdNodes * sizeofKdNode, header[3]);
-                kdTree = new KdTree(numKdNodes, kdNodes, kdPrimIndices, bounds, surfelPositions);
+    numSurfels = header[0];
+    surfelPositions = new Float32Array (dataBuffer, header[1], numSurfels * (sizeofSurfel / 4));
+    surfelColors = new Uint8Array (dataBuffer, header[1] + numSurfels * sizeofSurfel);
 
-                var firstUpload = !splatAttribVbo;
-                if (firstUpload) {
-                        splatAttribVbo = [gl.createBuffer(), gl.createBuffer()];
-                }
+    var numKdNodes = header[2];
+    var kdNodes = new Uint32Array (dataBuffer, 40, numKdNodes * 2);
+    var kdPrimIndices = new Uint32Array (dataBuffer, 40 + numKdNodes * sizeofKdNode, header[3]);
+    kdTree = new KdTree (numKdNodes, kdNodes, kdPrimIndices, bounds, surfelPositions);
 
-                gl.bindVertexArray(vao);
-                gl.bindBuffer(gl.ARRAY_BUFFER, splatAttribVbo[0]);
-                gl.bufferData(gl.ARRAY_BUFFER, surfelPositions, gl.STATIC_DRAW);
+    var firstUpload = !splatAttribVbo;
+    if (firstUpload) {
+      splatAttribVbo = [gl.createBuffer(), gl.createBuffer()];
+      }
 
-                gl.enableVertexAttribArray(1);
-                gl.vertexAttribPointer(1, 4, gl.FLOAT, false, sizeofSurfel, 0);
-                gl.vertexAttribDivisor(1, 1);
+    gl.bindVertexArray (vao);
+    gl.bindBuffer (gl.ARRAY_BUFFER, splatAttribVbo[0]);
+    gl.bufferData (gl.ARRAY_BUFFER, surfelPositions, gl.STATIC_DRAW);
 
-                gl.enableVertexAttribArray(2);
-                gl.vertexAttribPointer(2, 4, gl.FLOAT, false, sizeofSurfel, 16);
-                gl.vertexAttribDivisor(2, 1);
+    gl.enableVertexAttribArray (1);
+    gl.vertexAttribPointer (1, 4, gl.FLOAT, false, sizeofSurfel, 0);
+    gl.vertexAttribDivisor (1, 1);
 
-                gl.bindBuffer(gl.ARRAY_BUFFER, splatAttribVbo[1]);
-                gl.bufferData(gl.ARRAY_BUFFER, surfelColors, gl.DYNAMIC_DRAW);
-                gl.enableVertexAttribArray(3);
-                gl.vertexAttribPointer(3, 4, gl.UNSIGNED_BYTE, true, 0, 0);
-                gl.vertexAttribDivisor(3, 1);
+    gl.enableVertexAttribArray (2);
+    gl.vertexAttribPointer (2, 4, gl.FLOAT, false, sizeofSurfel, 16);
+    gl.vertexAttribDivisor (2, 1);
 
-                newPointCloudUpload = true;
-                document.getElementById("numSplats").innerHTML = numSurfels;
-                surfelBuffer = dataBuffer;
-                surfelDataset = dataset;
+    gl.bindBuffer (gl.ARRAY_BUFFER, splatAttribVbo[1]);
+    gl.bufferData (gl.ARRAY_BUFFER, surfelColors, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray (3);
+    gl.vertexAttribPointer (3, 4, gl.UNSIGNED_BYTE, true, 0, 0);
+    gl.vertexAttribDivisor (3, 1);
 
-                if (firstUpload) {
-                        setInterval(function() {
-                                // Save them some battery if they're not viewing the tab
-                                if (document.hidden) {
-                                        return;
-                                }
-                                var startTime = new Date();
+    newPointCloudUpload = true;
+    document.getElementById ("numSplats").innerHTML = numSurfels;
+    surfelBuffer = dataBuffer;
+    surfelDataset = dataset;
 
-                                gl.enable(gl.DEPTH_TEST);
-                                gl.enable(gl.BLEND);
-                                gl.blendFunc(gl.ONE, gl.ONE);
+    if (firstUpload) {
+      setInterval (function() {
+        // Save them some battery if they're not viewing the tab
+        if (document.hidden) {
+          return;
+          }
+        var startTime = new Date();
 
-                                gl.clearDepth(1.0);
-                                gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        gl.enable (gl.DEPTH_TEST);
+        gl.enable (gl.BLEND);
+        gl.blendFunc (gl.ONE, gl.ONE);
 
-                                // Reset the sampling rate and camera for new volumes
-                                if (newPointCloudUpload) {
-                                        camera = new ArcballCamera(defaultEye, center, up, 100, [WIDTH, HEIGHT]);
-                                        camera.zoom(-30);
-                                        // Pan the man down some
-                                        if (surfelDataset.url == pointClouds["Man"].url) {
-                                                camera.pan([0, -HEIGHT/2]);
-                                        }
-                                }
-                                if (colorsChanged) {
-                                        colorsChanged = false;
-                                        gl.bindBuffer(gl.ARRAY_BUFFER, splatAttribVbo[1]);
-                                        gl.bufferSubData(gl.ARRAY_BUFFER, 0, surfelColors);
-                                }
-                                projView = mat4.mul(projView, proj, camera.camera);
+        gl.clearDepth (1.0);
+        gl.clearColor (0.0, 0.0, 0.0, 0.0);
 
-                                splatShader.use(gl);
-                                gl.uniformMatrix4fv(splatShader.uniforms["proj_view"], false, projView);
-                                gl.uniform3fv(splatShader.uniforms["eye_pos"], camera.eyePos());
-                                gl.uniform1f(splatShader.uniforms["radius_scale"], splatRadiusSlider.value);
+        // Reset the sampling rate and camera for new volumes
+        if (newPointCloudUpload) {
+          camera = new ArcballCamera (defaultEye, center, up, 100, [WIDTH, HEIGHT]);
+          camera.zoom(-30);
+          // Pan the man down some
+          if (surfelDataset.url == pointClouds["Man"].url) {
+            camera.pan ([0, -HEIGHT/2]);
+            }
+          }
+        if (colorsChanged) {
+          colorsChanged = false;
+          gl.bindBuffer (gl.ARRAY_BUFFER, splatAttribVbo[1]);
+          gl.bufferSubData (gl.ARRAY_BUFFER, 0, surfelColors);
+          }
+        projView = mat4.mul (projView, proj, camera.camera);
 
-                                // Render depth prepass to filter occluded splats
-                                gl.uniform1i(splatShader.uniforms["depth_prepass"], 1);
-                                gl.bindFramebuffer(gl.FRAMEBUFFER, splatAccumFbo);
-                                gl.depthMask(true);
-                                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-                                gl.colorMask(false, false, false, false);
-                                gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, splatVerts.length / 3, numSurfels);
+        splatShader.use (gl);
+        gl.uniformMatrix4fv (splatShader.uniforms["proj_view"], false, projView);
+        gl.uniform3fv (splatShader.uniforms["eye_pos"], camera.eyePos());
+        gl.uniform1f (splatShader.uniforms["radius_scale"], splatRadiusSlider.value);
 
-                                // Render splat pass to accumulate splats for each pixel
-                                gl.uniform1i(splatShader.uniforms["depth_prepass"], 0);
-                                gl.colorMask(true, true, true, true);
-                                gl.depthMask(false);
-                                gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, splatVerts.length / 3, numSurfels);
+        // Render depth prepass to filter occluded splats
+        gl.uniform1i (splatShader.uniforms["depth_prepass"], 1);
+        gl.bindFramebuffer (gl.FRAMEBUFFER, splatAccumFbo);
+        gl.depthMask (true);
+        gl.clear (gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.colorMask (false, false, false, false);
+        gl.drawArraysInstanced (gl.TRIANGLE_STRIP, 0, splatVerts.length / 3, numSurfels);
 
-                                // Render normalization full screen shader pass to produce final image
-                                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-                                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-                                gl.disable(gl.BLEND);
-                                normalizationPassShader.use(gl);
-                                var eyeDir = camera.eyeDir();
-                                gl.uniform3fv(normalizationPassShader.uniforms["eye_dir"], eyeDir);
-                                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        // Render splat pass to accumulate splats for each pixel
+        gl.uniform1i (splatShader.uniforms["depth_prepass"], 0);
+        gl.colorMask (true, true, true, true);
+        gl.depthMask (false);
+        gl.drawArraysInstanced (gl.TRIANGLE_STRIP, 0, splatVerts.length / 3, numSurfels);
 
-                                // Draw the brush on top of the mesh, if we're brushing
-                                if (brushingMode.checked && mousePos != null && kdTree != null) {
-                                        var rect = canvas.getBoundingClientRect();
-                                        var screen = [(mousePos[0] / rect.width) * 2.0 - 1,
-                                                1.0 - 2.0 * (mousePos[1] / rect.height)];
-                                        var screenP = vec4.set(vec4.create(), screen[0], screen[1], 1.0, 1.0);
-                                        var invProjView = mat4.invert(mat4.create(), projView);
-                                        var worldPos = vec4.transformMat4(vec4.create(), screenP, invProjView);
-                                        var dir = vec3.set(vec3.create(), worldPos[0], worldPos[1], worldPos[2]);
-                                        dir = vec3.normalize(dir, dir);
+        // Render normalization full screen shader pass to produce final image
+        gl.bindFramebuffer (gl.FRAMEBUFFER, null);
+        gl.clear (gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.disable (gl.BLEND);
+        normalizationPassShader.use (gl);
+        var eyeDir = camera.eyeDir();
+        gl.uniform3fv (normalizationPassShader.uniforms["eye_dir"], eyeDir);
+        gl.drawArrays (gl.TRIANGLE_STRIP, 0, 4);
 
-                                        var orig = camera.eyePos();
-                                        orig = vec3.set(vec3.create(), orig[0], orig[1], orig[2]);
+        // Draw the brush on top of the mesh, if we're brushing
+        if (brushingMode.checked && mousePos != null && kdTree != null) {
+          var rect = canvas.getBoundingClientRect();
+          var screen = [(mousePos[0] / rect.width) * 2.0 - 1,
+                  1.0 - 2.0 * (mousePos[1] / rect.height)];
+          var screenP = vec4.set (vec4.create(), screen[0], screen[1], 1.0, 1.0);
+          var invProjView = mat4.invert (mat4.create(), projView);
+          var worldPos = vec4.transformMat4 (vec4.create(), screenP, invProjView);
+          var dir = vec3.set (vec3.create(), worldPos[0], worldPos[1], worldPos[2]);
+          dir = vec3.normalize (dir, dir);
 
-                                        var hit = kdTree.intersect(orig, dir);
-                                        if (hit != null) {
-                                                var hitP = hit[0];
-                                                var hitPrim = hit[1];
-                                                var brushColor = hexToRGB(brushColorPicker.value);
-                                                gl.disable(gl.DEPTH_TEST);
+          var orig = camera.eyePos();
+          orig = vec3.set (vec3.create(), orig[0], orig[1], orig[2]);
 
-                                                brushShader.use(gl);
-                                                gl.uniformMatrix4fv(brushShader.uniforms["proj_view"], false, projView);
-                                                gl.uniform3f(brushShader.uniforms["brush_pos"], hitP[0], hitP[1], hitP[2]);
-                                                gl.uniform3f(brushShader.uniforms["brush_normal"],
-                                                        surfelPositions[8 * hitPrim + 4],
-                                                        surfelPositions[8 * hitPrim + 5],
-                                                        surfelPositions[8 * hitPrim + 6]);
-                                                gl.uniform3f(brushShader.uniforms["brush_color"],
-                                                        brushColor[0] / 255.0, brushColor[1] / 255.0, brushColor[2] / 255.0);
-                                                gl.uniform1f(brushShader.uniforms["brush_radius"], brushRadiusSlider.value * 2);
-                                                gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, splatVerts.length / 3, 1);
+          var hit = kdTree.intersect(orig, dir);
+          if (hit != null) {
+            var hitP = hit[0];
+            var hitPrim = hit[1];
+            var brushColor = hexToRGB(brushColorPicker.value);
+            gl.disable(gl.DEPTH_TEST);
 
-                                                gl.enable(gl.DEPTH_TEST);
-                                        }
-                                }
+            brushShader.use (gl);
+            gl.uniformMatrix4fv (brushShader.uniforms["proj_view"], false, projView);
+            gl.uniform3f (brushShader.uniforms["brush_pos"], hitP[0], hitP[1], hitP[2]);
+            gl.uniform3f (brushShader.uniforms["brush_normal"],
+                          surfelPositions[8 * hitPrim + 4],
+                          surfelPositions[8 * hitPrim + 5],
+                          surfelPositions[8 * hitPrim + 6]);
+            gl.uniform3f (brushShader.uniforms["brush_color"],
+                          brushColor[0] / 255.0, brushColor[1] / 255.0, brushColor[2] / 255.0);
+            gl.uniform1f (brushShader.uniforms["brush_radius"], brushRadiusSlider.value * 2);
+            gl.drawArraysInstanced (gl.TRIANGLE_STRIP, 0, splatVerts.length / 3, 1);
 
-                                // Wait for rendering to actually finish so we can time it
-                                gl.finish();
-                                var endTime = new Date();
-                                var renderTime = endTime - startTime;
-                                // TODO: If we have a nicer LOD ordering of the point cloud,
-                                // we can adjust to keep the frame-rate constant by rendering
-                                // a subset of the points. Or I could implement some acceleration
-                                // structure and this can adjust how much we render from it
-                                var targetSamplingRate = renderTime / targetFrameTime;
+            gl.enable (gl.DEPTH_TEST);
+            }
+          }
 
-                                newPointCloudUpload = false;
-                                startTime = endTime;
-                        }, targetFrameTime);
-                }
-        });
-}
+        // Wait for rendering to actually finish so we can time it
+        gl.finish();
+        var endTime = new Date();
+        var renderTime = endTime - startTime;
+
+        // TODO: If we have a nicer LOD ordering of the point cloud,
+        // we can adjust to keep the frame-rate constant by rendering
+        // a subset of the points. Or I could implement some acceleration
+        // structure and this can adjust how much we render from it
+        var targetSamplingRate = renderTime / targetFrameTime;
+
+        newPointCloudUpload = false;
+        startTime = endTime;
+        }, targetFrameTime);
+      }
+    });
+  }
 }}}
 
 {{{
@@ -376,7 +382,7 @@ window.onload = function() {
 
   var paintSurface = function (mouse, evt) {
     mousePos = mouse;
-    if (numSurfels == null || !brushingMode.checked) 
+    if (numSurfels == null || !brushingMode.checked)
       return;
 
     // We need to use the actual canvas rect here to scale the mouse
