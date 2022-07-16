@@ -3,9 +3,9 @@
 // Vertices for the quad we intance to make the splats
 var splatVerts = [
         -0.5, -0.5, 0,
-        -0.5, 0.5, 0,
+        -0.5,  0.5, 0,
          0.5, -0.5, 0,
-         0.5, 0.5, 0,
+         0.5,  0.5, 0,
 ];
 
 // Positions and normals, interleaved
@@ -329,6 +329,7 @@ var uploadModel = function(files) {
 
 {{{
 window.onload = function() {
+
   fillDatasetSelector();
 
   brushRadiusSlider = document.getElementById("brushRadiusSlider");
@@ -368,17 +369,15 @@ window.onload = function() {
 
   WIDTH = canvas.width;
   HEIGHT = canvas.height;
-
-  proj = mat4.perspective(mat4.create(), 60 * Math.PI / 180.0, WIDTH / HEIGHT, 0.1, 500);
+  proj = mat4.perspective (mat4.create(), 60 * Math.PI / 180.0, WIDTH / HEIGHT, 0.1, 500);
   projView = mat4.create();
 
-  camera = new ArcballCamera(defaultEye, center, up, 2, [WIDTH, HEIGHT]);
+  camera = new ArcballCamera (defaultEye, center, up, 2, [WIDTH, HEIGHT]);
 
-  var paintSurface = function(mouse, evt) {
+  var paintSurface = function (mouse, evt) {
     mousePos = mouse;
-    if (numSurfels == null || !brushingMode.checked) {
+    if (numSurfels == null || !brushingMode.checked) 
       return;
-      }
 
     // We need to use the actual canvas rect here to scale the mouse
     // positions, since it may be smaller (if on a small screen)
@@ -405,8 +404,8 @@ window.onload = function() {
                       surfelColors[4 * primID + 2] = brushColor[2];
       });
       colorsChanged = true;
-      gl.bindBuffer(gl.ARRAY_BUFFER, splatAttribVbo[1]);
-      gl.bufferSubData(gl.ARRAY_BUFFER, 0, surfelColors);
+      gl.bindBuffer (gl.ARRAY_BUFFER, splatAttribVbo[1]);
+      gl.bufferSubData (gl.ARRAY_BUFFER, 0, surfelColors);
       }
     };
 
@@ -419,11 +418,11 @@ window.onload = function() {
     if (evt.buttons == 1) {
       if (!brushingMode.checked) {
         camera.rotate(prev, cur);
-        } 
+        }
       else {
         paintSurface(cur, evt);
         }
-      }  
+      }
     else if (evt.buttons == 2) {
       camera.pan([cur[0] - prev[0], prev[1] - cur[1]]);
       }
@@ -432,63 +431,63 @@ window.onload = function() {
   controller.pinch = controller.wheel;
   controller.twoFingerDrag = function(drag) { camera.pan(drag); };
 
-  controller.registerForCanvas(canvas);
+  controller.registerForCanvas (canvas);
 
   vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
 
   // Create the instanced quad buffer we'll use to make the transformed splats
   var vbo = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(splatVerts), gl.STATIC_DRAW);
+  gl.bindBuffer (gl.ARRAY_BUFFER, vbo);
+  gl.bufferData (gl.ARRAY_BUFFER, new Float32Array(splatVerts), gl.STATIC_DRAW);
 
-  gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray (0);
+  gl.vertexAttribPointer (0, 3, gl.FLOAT, false, 0, 0);
 
-  splatShader = new Shader(gl, vertShader, fragShader);
+  splatShader = new Shader (gl, vertShader, fragShader);
 
-  normalizationPassShader = new Shader(gl, quadVertShader, normalizationFragShader);
-  normalizationPassShader.use(gl);
-  gl.uniform1i(normalizationPassShader.uniforms["splat_colors"], 0)
-  gl.uniform1i(normalizationPassShader.uniforms["splat_normals"], 1)
+  normalizationPassShader = new Shader (gl, quadVertShader, normalizationFragShader);
+  normalizationPassShader.use (gl);
+  gl.uniform1i (normalizationPassShader.uniforms["splat_colors"], 0)
+  gl.uniform1i (normalizationPassShader.uniforms["splat_normals"], 1)
 
-  brushShader = new Shader(gl, brushVertShader, brushFragShader);
+  brushShader = new Shader (gl, brushVertShader, brushFragShader);
 
   // Setup the render targets for the splat rendering pass
   splatRenderTargets = [gl.createTexture(), gl.createTexture(), gl.createTexture()];
   for (var i = 0; i < 2; ++i) {
-          gl.bindTexture(gl.TEXTURE_2D, splatRenderTargets[i]);
-          gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA32F, WIDTH, HEIGHT);
-  }
-  gl.bindTexture(gl.TEXTURE_2D, splatRenderTargets[2]);
-  gl.texStorage2D(gl.TEXTURE_2D, 1, gl.DEPTH_COMPONENT32F, WIDTH, HEIGHT);
+    gl.bindTexture (gl.TEXTURE_2D, splatRenderTargets[i]);
+    gl.texStorage2D (gl.TEXTURE_2D, 1, gl.RGBA32F, WIDTH, HEIGHT);
+    }
+  gl.bindTexture (gl.TEXTURE_2D, splatRenderTargets[2]);
+  gl.texStorage2D (gl.TEXTURE_2D, 1, gl.DEPTH_COMPONENT32F, WIDTH, HEIGHT);
 
   for (var i = 0; i < 3; ++i) {
-          gl.bindTexture(gl.TEXTURE_2D, splatRenderTargets[i]);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  }
+    gl.bindTexture (gl.TEXTURE_2D, splatRenderTargets[i]);
+    gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    }
+
   // Setup the bindings for the normalization pass shader
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, splatRenderTargets[0]);
-  gl.activeTexture(gl.TEXTURE1);
-  gl.bindTexture(gl.TEXTURE_2D, splatRenderTargets[1]);
+  gl.activeTexture (gl.TEXTURE0);
+  gl.bindTexture (gl.TEXTURE_2D, splatRenderTargets[0]);
+  gl.activeTexture (gl.TEXTURE1);
+  gl.bindTexture (gl.TEXTURE_2D, splatRenderTargets[1]);
 
   splatAccumFbo = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.FRAMEBUFFER, splatAccumFbo);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, splatRenderTargets[0], 0);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, splatRenderTargets[1], 0);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, splatRenderTargets[2], 0);
-  gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+  gl.bindFramebuffer (gl.FRAMEBUFFER, splatAccumFbo);
+  gl.framebufferTexture2D (gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, splatRenderTargets[0], 0);
+  gl.framebufferTexture2D (gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, splatRenderTargets[1], 0);
+  gl.framebufferTexture2D (gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, splatRenderTargets[2], 0);
+  gl.drawBuffers ([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
 
   // See if we were linked to a datset
   if (window.location.hash) {
     var linkedDataset = decodeURI (window.location.hash.substr(1));
-    if (linkedDataset in pointClouds) {
+    if (linkedDataset in pointClouds)
       document.getElementById ("datasets").value = linkedDataset;
-      }
     }
   selectPointCloud();
 }
@@ -496,12 +495,13 @@ window.onload = function() {
 
 {{{
 var fillDatasetSelector = function() {
-        var selector = document.getElementById("datasets");
-        for (var v in pointClouds) {
-                var opt = document.createElement("option");
-                opt.value = v;
-                opt.innerHTML = v;
-                selector.appendChild(opt);
-        }
-}
+
+  var selector = document.getElementById("datasets");
+  for (var v in pointClouds) {
+    var opt = document.createElement("option");
+    opt.value = v;
+    opt.innerHTML = v;
+    selector.appendChild(opt);
+    }
+  }
 }}}
