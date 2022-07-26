@@ -56,7 +56,6 @@ const center = vec3.set(vec3.create(), 0.5, 0.5, 0.5);
 const up = vec3.set(vec3.create(), 0.0, 1.0, 0.0);
 
 {{{
-
 var pointClouds = {
   "Santa":   { url: "8ktn1ac8v2dxhui/painted_santa_kd.rsf", size: 3265940, },
   "Dino":    { url: "e4l0qdy43ttvb87/dinosaur_kd.rsf", size: 2448388, },
@@ -307,31 +306,36 @@ var fillColor = function() {
 
 {{{
 var saveModel = function() {
-        var blob = new Blob([surfelBuffer], {type: "application/byte-stream"});
-        var name = surfelDataset.url;
-        var fnd = surfelDataset.url.indexOf("/");
-        if (fnd != -1) {
-                name = surfelDataset.url.substr(fnd + 1);
-        }
-        saveAs(blob, name);
-}
+
+  var blob = new Blob([surfelBuffer], {type: "application/byte-stream"});
+  var name = surfelDataset.url;
+  var fnd = surfelDataset.url.indexOf("/");
+  if (fnd != -1) {
+    name = surfelDataset.url.substr(fnd + 1);
+    }
+
+  saveAs(blob, name);
+  }
 }}}
 {{{
 var uploadModel = function(files) {
-        var file = files[0];
-        pointClouds["uploaded_" + file.name] = {
-                file: file,
-                url: file.name,
-                size: file.size,
-        }
-        var selector = document.getElementById("datasets");
-        var opt = document.createElement("option");
-        opt.value = "uploaded_" + file.name;
-        opt.innerHTML = "Uploaded: " + file.name;
-        selector.appendChild(opt);
-        selector.value = opt.value;
-        selectPointCloud();
-}
+
+  var file = files[0];
+  pointClouds["uploaded_" + file.name] = {
+    file: file,
+    url: file.name,
+    size: file.size,
+    }
+
+  var selector = document.getElementById("datasets");
+  var opt = document.createElement("option");
+  opt.value = "uploaded_" + file.name;
+  opt.innerHTML = "Uploaded: " + file.name;
+
+  selector.appendChild(opt);
+  selector.value = opt.value;
+  selectPointCloud();
+  }
 }}}
 
 {{{
@@ -391,9 +395,9 @@ window.onload = function() {
     var rect = canvas.getBoundingClientRect();
     var screen = [(mouse[0] / rect.width) * 2.0 - 1, 1.0 - 2.0 * (mouse[1] / rect.height)];
     var screenP = vec4.set(vec4.create(), screen[0], screen[1], 1.0, 1.0);
-    var invProjView = mat4.mul(mat4.create(), proj, camera.camera);
-    mat4.invert(invProjView, invProjView);
-    var worldPos = vec4.transformMat4(vec4.create(), screenP, invProjView);
+    var invProjView = mat4.mul (mat4.create(), proj, camera.camera);
+    mat4.invert (invProjView, invProjView);
+    var worldPos = vec4.transformMat4 (vec4.create(), screenP, invProjView);
     var dir = vec3.set(vec3.create(), worldPos[0], worldPos[1], worldPos[2]);
     dir = vec3.normalize(dir, dir);
 
